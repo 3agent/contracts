@@ -1,4 +1,1 @@
-# THREEAGENT Contracts
-
-### Updates
-- removed get deployments function
+# 3agent Contracts
