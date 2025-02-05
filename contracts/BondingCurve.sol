@@ -58,19 +58,19 @@ contract BondingCurve is ReentrancyGuard {
     bool public finalized;
 
     /// @dev WETH contract reference for Uniswap integration
-    IWETH public immutable WETH;
+    IWETH public immutable weth;
 
     /// @dev Uniswap V3 position manager for liquidity provision
     INonfungiblePositionManager public immutable nonfungiblePositionManager;
 
     /// @dev Address that receives protocol fees
-    address public protocolFeeRecipient;
+    address public immutable protocolFeeRecipient;
 
     /// @dev Protocol fee percentage (scaled by 1e18)
-    uint256 public protocolFeePercent;
+    uint256 public immutable protocolFeePercent;
 
     /// @dev Factory contract that deployed this curve
-    address public factory;
+    address public immutable factory;
 
     // ============ Events ============
 
@@ -107,8 +107,19 @@ contract BondingCurve is ReentrancyGuard {
         uint256 _protocolFeePercent,
         address _factory
     ) {
+        require(_wethAddress != address(0), "WETH address cannot be 0");
+        require(
+            _nonfungiblePositionManagerAddress != address(0),
+            "Position manager address cannot be 0"
+        );
+        require(
+            _protocolFeeRecipient != address(0),
+            "Protocol fee recipient cannot be 0"
+        );
+        require(_factory != address(0), "Factory address cannot be 0");
+
         token = CurvedToken(_token);
-        WETH = IWETH(_wethAddress);
+        weth = IWETH(_wethAddress);
         nonfungiblePositionManager = INonfungiblePositionManager(
             _nonfungiblePositionManagerAddress
         );
@@ -139,25 +150,25 @@ contract BondingCurve is ReentrancyGuard {
         uint256 cost = getBuyPrice(supply, amount);
         require(msg.value >= cost, "Insufficient payment");
 
-        // Mint tokens to buyer
-        uint256 scaledAmount = amount * (10 ** token.decimals());
-        token.mint(msg.sender, scaledAmount);
-
         netETHRaised += cost;
         circulatingSupply += amount;
 
-        // Refund excess ETH
-        uint256 excess = msg.value - cost;
-        if (excess > 0) {
-            (bool refundSuccess, ) = msg.sender.call{value: excess}("");
-            require(refundSuccess, "Refund failed");
-        }
+        // Mint tokens to buyer
+        uint256 scaledAmount = amount * (10 ** token.decimals());
+        token.mint(msg.sender, scaledAmount);
 
         emit Buy(msg.sender, amount, cost);
 
         // Finalize if cap reached
         if (netETHRaised >= CAP) {
             finalize();
+        }
+
+        // Refund excess ETH
+        uint256 excess = msg.value - cost;
+        if (excess > 0) {
+            (bool refundSuccess, ) = msg.sender.call{value: excess}("");
+            require(refundSuccess, "Refund failed");
         }
     }
 
@@ -177,6 +188,8 @@ contract BondingCurve is ReentrancyGuard {
             "Contract lacks ETH to sell tokens"
         );
 
+        circulatingSupply -= amount;
+
         // Transfer and burn tokens
         uint256 scaledAmount = amount * (10 ** token.decimals());
         bool success = token.transferFrom(
@@ -186,8 +199,6 @@ contract BondingCurve is ReentrancyGuard {
         );
         require(success, "Token transfer failed");
         token.burn(address(this), scaledAmount);
-
-        circulatingSupply -= amount;
 
         // Send ETH refund
         (bool sent, ) = msg.sender.call{value: refund}("");
@@ -263,9 +274,9 @@ contract BondingCurve is ReentrancyGuard {
 
         // Setup Uniswap V3 pool
         uint256 contractBalance = token.balanceOf(address(this));
-        IWETH(WETH).deposit{value: remainingETH}();
+        IWETH(weth).deposit{value: remainingETH}();
         _safeApprove(
-            IERC20(address(WETH)),
+            IERC20(address(weth)),
             address(nonfungiblePositionManager),
             remainingETH
         );
@@ -275,21 +286,17 @@ contract BondingCurve is ReentrancyGuard {
             contractBalance
         );
 
-        emit PostWETHDeposit(WETH.balanceOf(address(this)), remainingETH);
+        emit PostWETHDeposit(weth.balanceOf(address(this)), remainingETH);
 
-        uint256 wethBalance = WETH.balanceOf(address(this));
+        uint256 wethBalance = weth.balanceOf(address(this));
         require(wethBalance > 0, "No WETH to provide");
 
         // Initialize pool
         (address token0, address token1) = _sortTokens(
-            address(WETH),
+            address(weth),
             address(token)
         );
-        uint160 sqrtPriceX96 = _calculateSqrtPriceX96(
-            token0,
-            wethBalance,
-            contractBalance
-        );
+        uint160 sqrtPriceX96 = _calculateSqrtPriceX96(token0);
 
         address pool = nonfungiblePositionManager
             .createAndInitializePoolIfNecessary(
@@ -444,9 +451,7 @@ contract BondingCurve is ReentrancyGuard {
      * @dev Calculates the sqrt price for Uniswap V3 pool initialization
      */
     function _calculateSqrtPriceX96(
-        address token0,
-        uint256 wethBalance,
-        uint256 tokenBalance
+        address token0
     ) internal view returns (uint160) {
         uint256 finalPrice = getBuyPrice(circulatingSupply, 1);
         // finalPrice is "wei per token" (ETH per token, scaled 1e18)
@@ -456,7 +461,7 @@ contract BondingCurve is ReentrancyGuard {
         uint256 ratio;
         uint256 sqrtPrice;
 
-        if (token0 == address(WETH)) {
+        if (token0 == address(weth)) {
             // Need "token per WETH" = 1 / (ETH per token)
             // finalPrice is scaled by 1e18, so do:
             // ratio = (1e18 * 1e18) / finalPrice = 1e36 / finalPrice,
@@ -479,17 +484,6 @@ contract BondingCurve is ReentrancyGuard {
     }
 
     /**
-     * @dev Encodes the price as a sqrt price for Uniswap V3
-     */
-    function encodePriceSqrt(
-        uint256 amount1,
-        uint256 amount0
-    ) internal pure returns (uint160) {
-        uint256 ratioX192 = (amount1 << 192) / amount0;
-        return uint160(_sqrt(ratioX192));
-    }
-
-    /**
      * @dev Adds initial liquidity to the Uniswap V3 pool
      */
     function _addInitialLiquidity(
@@ -505,8 +499,8 @@ contract BondingCurve is ReentrancyGuard {
             ? tokenBalance
             : wethBalance;
 
-        INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager
-            .MintParams({
+        INonfungiblePositionManager.MintParams
+            memory params = INonfungiblePositionManager.MintParams({
                 token0: token0,
                 token1: token1,
                 fee: 100, // 0.01% fee tier
@@ -540,7 +534,7 @@ contract BondingCurve is ReentrancyGuard {
             ? amount0Desired - amount0
             : amount1Desired - amount1;
 
-        uint256 leftoverWETH = token0 == address(WETH)
+        uint256 leftoverWETH = token0 == address(weth)
             ? amount0Desired - amount0
             : amount1Desired - amount1;
 
@@ -551,7 +545,7 @@ contract BondingCurve is ReentrancyGuard {
 
         // Unwrap and transfer leftover WETH as ETH to fee recipient if any
         if (leftoverWETH > 0) {
-            WETH.withdraw(leftoverWETH);
+            weth.withdraw(leftoverWETH);
             (bool success, ) = protocolFeeRecipient.call{value: leftoverWETH}(
                 ""
             );

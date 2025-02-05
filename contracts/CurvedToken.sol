@@ -27,9 +27,9 @@ contract CurvedToken is ERC20, ReentrancyGuard {
 
     constructor(
         address _bondingCurve,
-        string memory name,
-        string memory symbol
-    ) ERC20(name, symbol) {
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) {
         if (_bondingCurve == address(0)) revert ZeroAddressNotAllowed();
 
         bondingCurve = _bondingCurve;

@@ -47,7 +47,7 @@ contract ThreeAgentFactoryV1 is Initializable, OwnableUpgradeable, ReentrancyGua
         uint256 timestamp
     );
     event FeeParametersUpdated(address indexed recipient, uint256 feePercent);
-    event WETHAddressUpdated(address indexed oldAddress, address indexed newAddress);
+    event WethAddressUpdated(address indexed oldAddress, address indexed newAddress);
     event PositionManagerUpdated(address indexed oldAddress, address indexed newAddress);
 
     /**
@@ -62,7 +62,8 @@ contract ThreeAgentFactoryV1 is Initializable, OwnableUpgradeable, ReentrancyGua
         address _nonfungiblePositionManagerAddress,
         address _protocolFeeRecipient,
         uint256 _protocolFeePercent
-    ) external initializer {
+        // TODO: turn back to external
+    ) public initializer {
         require(_wethAddress != address(0), "Invalid WETH address");
         require(_nonfungiblePositionManagerAddress != address(0), "Invalid position manager");
         require(_protocolFeeRecipient != address(0), "Invalid fee recipient");
@@ -139,13 +140,13 @@ contract ThreeAgentFactoryV1 is Initializable, OwnableUpgradeable, ReentrancyGua
 
     /**
      * @notice Updates WETH address
-     * @param _newWETHAddress New WETH contract address
+     * @param _newWethAddress New WETH contract address
      */
-    function setWETHAddress(address _newWETHAddress) external onlyOwner {
-        require(_newWETHAddress != address(0), "Invalid WETH address");
+    function setWethAddress(address _newWethAddress) external onlyOwner {
+        require(_newWethAddress != address(0), "Invalid WETH address");
         address oldAddress = wethAddress;
-        wethAddress = _newWETHAddress;
-        emit WETHAddressUpdated(oldAddress, _newWETHAddress);
+        wethAddress = _newWethAddress;
+        emit WethAddressUpdated(oldAddress, _newWethAddress);
     }
 
     /**

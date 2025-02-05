@@ -93,7 +93,7 @@ describe("ThreeAgentFactoryV1", function () {
       const CurveFactory = await ethers.getContractFactory("BondingCurve");
       const curve = CurveFactory.attach(deployment.curve) as BondingCurve;
 
-      expect(await curve.WETH()).to.equal(await weth.getAddress());
+      expect(await curve.weth()).to.equal(await weth.getAddress());
       expect(await curve.nonfungiblePositionManager()).to.equal(await nonfungiblePositionManager.getAddress());
       expect(await curve.protocolFeeRecipient()).to.equal(protocolFeeRecipient.address);
       expect(await curve.protocolFeePercent()).to.equal(PROTOCOL_FEE_PERCENT);

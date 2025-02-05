@@ -188,6 +188,7 @@ async function main() {
 
     const uniswapFactory = new ethers.Contract(UNISWAP_V3_FACTORY, FACTORY_INTERFACE, deployer);
 
+    // TODO: these might need to be in a different order
     const poolAddress = await uniswapFactory.getPool(tokenAddress, WETH_ADDRESS, 100);
 
     console.log("Uniswap V3 pool address:", poolAddress);

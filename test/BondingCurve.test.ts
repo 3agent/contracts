@@ -68,7 +68,7 @@ describe("BondingCurve", function () {
   describe("Initialization", function () {
     it("should initialize with correct parameters", async function () {
       expect(await bondingCurve.token()).to.equal(await token.getAddress());
-      expect(await bondingCurve.WETH()).to.equal(await weth.getAddress());
+      expect(await bondingCurve.weth()).to.equal(await weth.getAddress());
       expect(await bondingCurve.nonfungiblePositionManager()).to.equal(await nonfungiblePositionManager.getAddress());
       expect(await bondingCurve.protocolFeeRecipient()).to.equal(owner.address);
       expect(await bondingCurve.protocolFeePercent()).to.equal(PROTOCOL_FEE_PERCENT);
