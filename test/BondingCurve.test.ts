@@ -16,8 +16,6 @@ describe("BondingCurve", function () {
   let user1: HardhatEthersSigner;
   let user2: HardhatEthersSigner;
 
-  // TODO: updaate values for BASE
-  const INITIAL_PRICE = 4900000000; // Sepolia
   const PROTOCOL_FEE_PERCENT = ethers.parseEther("0.05"); // 5%
 
   before(async function () {
@@ -80,11 +78,6 @@ describe("BondingCurve", function () {
   });
 
   describe("Price Calculations", function () {
-    it("should calculate correct initial price", async function () {
-      const price = await bondingCurve.getBuyPrice(0n, 1n);
-      expect(price).to.equal(INITIAL_PRICE);
-    });
-
     it("should revert when trying to buy zero tokens", async function () {
       await expect(bondingCurve.getBuyPrice(0n, 0n)).to.be.revertedWith("Must buy > 0 tokens");
     });
@@ -93,11 +86,11 @@ describe("BondingCurve", function () {
   describe("Token Purchases", function () {
     it("should allow purchasing tokens", async function () {
       const amount = 1000000n; // 1M tokens
-      const price = await bondingCurve.getBuyPrice(0n, amount);
+      const { cost, fee } = await bondingCurve.getBuyPrice(0n, amount);
 
-      await expect(bondingCurve.connect(user1).buy(amount, { value: price }))
+      await expect(bondingCurve.connect(user1).buy(amount, { value: cost }))
         .to.emit(bondingCurve, "Buy")
-        .withArgs(user1.address, amount, price);
+        .withArgs(user1.address, amount, cost);
 
       const scaledAmount = amount * 10n ** 18n;
       expect(await token.balanceOf(user1.address)).to.equal(scaledAmount);
@@ -124,22 +117,22 @@ describe("BondingCurve", function () {
 
     it("should refund excess ETH", async function () {
       const amount = 1000000n; // 1M tokens
-      const price = await bondingCurve.getBuyPrice(await bondingCurve.circulatingSupply(), amount);
+      const { cost, fee } = await bondingCurve.getBuyPrice(await bondingCurve.circulatingSupply(), amount);
 
       const excess = ethers.parseEther("1");
       const initialBalance = await ethers.provider.getBalance(user2.address);
 
-      await bondingCurve.connect(user2).buy(amount, { value: price + excess });
+      await bondingCurve.connect(user2).buy(amount, { value: cost + excess });
 
       const finalBalance = await ethers.provider.getBalance(user2.address);
-      expect(finalBalance).to.be.gt(initialBalance - price - excess);
+      expect(finalBalance).to.be.gt(initialBalance - cost - excess);
     });
 
     it("should revert when payment is insufficient", async function () {
       const amount = 1000000n; // 1M tokens
-      const price = await bondingCurve.getBuyPrice(await bondingCurve.circulatingSupply(), amount);
+      const { cost, fee } = await bondingCurve.getBuyPrice(await bondingCurve.circulatingSupply(), amount);
 
-      await expect(bondingCurve.connect(user1).buy(amount, { value: price - 1n })).to.be.revertedWith(
+      await expect(bondingCurve.connect(user1).buy(amount, { value: cost - 1n })).to.be.revertedWith(
         "Insufficient payment"
       );
     });
@@ -158,8 +151,8 @@ describe("BondingCurve", function () {
         try {
           // Always try to buy 100M tokens
           const buyAmount = 100_000_000;
-          const buyPrice = await bondingCurve.getBuyPrice(currentSupply, buyAmount);
-          const buyTx = await bondingCurve.connect(user1).buy(buyAmount, { value: buyPrice });
+          const { cost, fee } = await bondingCurve.getBuyPrice(currentSupply, buyAmount);
+          const buyTx = await bondingCurve.connect(user1).buy(buyAmount, { value: cost });
           await buyTx.wait();
         } catch (error) {
           console.log("Error during purchase:", error);

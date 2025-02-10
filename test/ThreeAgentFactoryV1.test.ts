@@ -149,9 +149,9 @@ describe("ThreeAgentFactoryV1", function () {
 
       // Purchase tokens
       const amount = 1000000n; // 1M tokens
-      const price = await curve.getBuyPrice(0n, amount);
+      const { cost, fee } = await curve.getBuyPrice(0n, amount);
 
-      await curve.connect(user1).buy(amount, { value: price });
+      await curve.connect(user1).buy(amount, { value: cost });
 
       expect(await token.balanceOf(user1.address)).to.equal(amount * 10n ** 18n);
     });

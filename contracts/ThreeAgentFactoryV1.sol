@@ -86,7 +86,7 @@ contract ThreeAgentFactoryV1 is Initializable, OwnableUpgradeable, ReentrancyGua
     function createTokenAndCurve(
         string calldata name,
         string calldata symbol
-    ) external nonReentrant returns (address tokenAddr, address curveAddr) {
+    ) external virtual nonReentrant returns (address tokenAddr, address curveAddr) {
         require(bytes(name).length > 0 && bytes(name).length <= 32, "Invalid name length");
         require(bytes(symbol).length > 0 && bytes(symbol).length <= 8, "Invalid symbol length");
 

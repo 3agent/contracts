@@ -147,15 +147,21 @@ contract BondingCurve is ReentrancyGuard {
         require(amount > 0, "Must buy > 0 tokens");
 
         uint256 supply = circulatingSupply;
-        uint256 cost = getBuyPrice(supply, amount);
+        (uint256 cost, uint256 fee) = getBuyPrice(supply, amount);
         require(msg.value >= cost, "Insufficient payment");
 
-        netETHRaised += cost;
+        uint256 netCost = cost - fee;
+
+        netETHRaised += netCost;
         circulatingSupply += amount;
 
         // Mint tokens to buyer
         uint256 scaledAmount = amount * (10 ** token.decimals());
         token.mint(msg.sender, scaledAmount);
+
+        // Send fee to protocol fee recipient
+        (bool feeSent, ) = protocolFeeRecipient.call{value: fee}("");
+        require(feeSent, "Protocol fee transfer failed");
 
         emit Buy(msg.sender, amount, cost);
 
@@ -213,12 +219,13 @@ contract BondingCurve is ReentrancyGuard {
      * @notice Calculates price to buy tokens from the curve
      * @param supply Current token supply
      * @param amount Amount of tokens to buy
-     * @return Price in wei
+     * @return cost Cost of buying the tokens
+     * @return fee Protocol fee
      */
     function getBuyPrice(
         uint256 supply,
         uint256 amount
-    ) public pure returns (uint256) {
+    ) public view returns (uint256 cost, uint256 fee) {
         require(amount > 0, "Must buy > 0 tokens");
 
         uint256 rPowSupply = _powFixed(RATIO, supply);
@@ -227,9 +234,12 @@ contract BondingCurve is ReentrancyGuard {
         uint256 denominator = RATIO - 1e18;
         uint256 fraction = FullMath.mulDiv(numerator, 1e18, denominator);
         uint256 geometric = FullMath.mulDiv(rPowSupply, fraction, 1e18);
-        uint256 cost = FullMath.mulDiv(P0, geometric, 1e18);
+        uint256 costBeforeFee = FullMath.mulDiv(P0, geometric, 1e18);
 
-        return cost;
+        uint256 protocolFee = FullMath.mulDiv(costBeforeFee, protocolFeePercent, 1e18);
+        uint256 netCost = costBeforeFee + protocolFee;
+
+        return (netCost, protocolFee);
     }
 
     /**
@@ -453,7 +463,7 @@ contract BondingCurve is ReentrancyGuard {
     function _calculateSqrtPriceX96(
         address token0
     ) internal view returns (uint160) {
-        uint256 finalPrice = getBuyPrice(circulatingSupply, 1);
+        (uint256 finalPrice, ) = getBuyPrice(circulatingSupply, 1);
         // finalPrice is "wei per token" (ETH per token, scaled 1e18)
 
         // 2**96

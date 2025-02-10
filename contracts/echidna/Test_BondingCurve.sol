@@ -147,10 +147,10 @@ contract DummyWETH is IWETH {
 contract DummyNPM is INonfungiblePositionManager {
     /// @notice Simply return a nonzero "pool" address.
     function createAndInitializePoolIfNecessary(
-        address token0,
-        address token1,
-        uint24 fee,
-        uint160 sqrtPriceX96
+        address,  // token0
+        address,  // token1
+        uint24,   // fee
+        uint160   // sqrtPriceX96
     ) external payable override returns (address pool) {
         // For testing we simply return a dummy pool address.
         return address(0x1);
@@ -206,7 +206,7 @@ contract DummyNPM is INonfungiblePositionManager {
         // do nothing
     }
 
-    function approve(address to, uint256 tokenId) external override {
+    function approve(address, uint256) external override {
         // Do nothing.
     }
 
@@ -219,10 +219,10 @@ contract DummyNPM is INonfungiblePositionManager {
     }
 
     function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
+        address,  // from
+        address,  // to
+        uint256,  // tokenId
+        bytes calldata  // data
     ) external override {
         // Do nothing.
     }
@@ -284,7 +284,7 @@ contract Test_BondingCurve {
         if (curve.finalized()) return;
 
         // Get the current cost to buy `amount` tokens.
-        uint256 cost = curve.getBuyPrice(curve.circulatingSupply(), amount);
+        (uint256 cost, ) = curve.getBuyPrice(curve.circulatingSupply(), amount);
         // Only proceed if enough ETH was sent.
         if (msg.value < cost) return;
 
@@ -313,7 +313,7 @@ contract Test_BondingCurve {
     /// by buying tokens. (Finalization happens automatically when netETHRaised >= CAP.)
     function buyToFinalize(uint256 amount) public payable {
         if (curve.finalized()) return;
-        uint256 cost = curve.getBuyPrice(curve.circulatingSupply(), amount);
+        (uint256 cost, ) = curve.getBuyPrice(curve.circulatingSupply(), amount);
         if (msg.value < cost) return;
         curve.buy{value: cost}(amount);
     }
@@ -322,7 +322,7 @@ contract Test_BondingCurve {
     /// The function will only buy if the curve has not finalized and the amount is positive.
     function buyWithAssertions(uint256 amount) public payable {
         if (curve.finalized()) return;
-        uint256 cost = curve.getBuyPrice(curve.circulatingSupply(), amount);
+        (uint256 cost, ) = curve.getBuyPrice(curve.circulatingSupply(), amount);
         // Assert that the cost is nonzero for nonzero token amounts.
         if (amount > 0) {
             assert(cost > 0);
@@ -350,7 +350,7 @@ contract Test_BondingCurve {
 
         // Calculate the token amount in ERC20 decimals.
         uint256 scaledAmount = amount * (10 ** token.decimals());
-        // If the caller (this contract) doesn’t have enough tokens, skip.
+        // If the caller (this contract) doesn't have enough tokens, skip.
         if (token.balanceOf(address(this)) < scaledAmount) return;
 
         // Record state variables before the sale.
@@ -373,7 +373,7 @@ contract Test_BondingCurve {
     function testProtocolFee(uint256 amount) public payable {
         uint256 initialBalance = protocolFeeRecipient.balance;
         // Buy tokens to reach CAP
-        uint256 cost = curve.getBuyPrice(curve.circulatingSupply(), amount);
+        (uint256 cost, ) = curve.getBuyPrice(curve.circulatingSupply(), amount);
         curve.buy{value: cost}(amount);
 
         if (curve.finalized()) {
@@ -391,8 +391,8 @@ contract Test_BondingCurve {
     /// Invariant: For any given supply, buying 2 tokens should cost at least as much as buying 1 token.
     function echidna_buyPrice_monotonic() public view returns (bool) {
         uint256 supply = curve.circulatingSupply();
-        uint256 price1 = curve.getBuyPrice(supply, 1);
-        uint256 price2 = curve.getBuyPrice(supply, 2);
+        (uint256 price1, ) = curve.getBuyPrice(supply, 1);
+        (uint256 price2, ) = curve.getBuyPrice(supply, 2);
         return price2 >= price1;
     }
 
@@ -459,8 +459,8 @@ contract Test_BondingCurve {
     function echidna_price_increases_with_supply() public view returns (bool) {
         uint256 supply = curve.circulatingSupply();
         if (supply == 0) return true;
-        uint256 priceAtCurrentSupply = curve.getBuyPrice(supply, 1);
-        uint256 priceAtHigherSupply = curve.getBuyPrice(supply + 1, 1);
+        (uint256 priceAtCurrentSupply, ) = curve.getBuyPrice(supply, 1);
+        (uint256 priceAtHigherSupply, ) = curve.getBuyPrice(supply + 1, 1);
         return priceAtHigherSupply > priceAtCurrentSupply;
     }
 
@@ -469,7 +469,7 @@ contract Test_BondingCurve {
         uint256 supply = curve.circulatingSupply();
         if (supply == 0) return true;
         uint256 amount = 1;
-        uint256 buyPrice = curve.getBuyPrice(supply, amount);
+        (uint256 buyPrice, ) = curve.getBuyPrice(supply, amount);
         uint256 sellPrice = curve.getSellPrice(supply, amount);
         return buyPrice > sellPrice;
     }

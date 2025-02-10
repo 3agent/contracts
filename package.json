@@ -12,6 +12,8 @@
     "deploy": "npx hardhat ignition deploy",
     "deploy:test": "yarn deploy ./ignition/modules/FactoryModule.ts --network sepolia --verify",
     "deploy:dev": "yarn deploy ./ignition/modules/FactoryModule.ts --network localhost",
+    "upgrade:test": "yarn deploy ./ignition/modules/FactoryV2Module.ts --network sepolia --verify",
+    "upgrade:dev": "yarn deploy ./ignition/modules/FactoryV2Module.ts --network localhost",
     "visualize": "npx hardhat ignition visualize",
     "start:base": "npx hardhat node --fork https://rpc.ankr.com/base/6d210a387ff8c4cdc9923ab3c3c66967b8da8dce449a1dc429dfa15d0ed97e68",
     "start:sepolia": "npx hardhat node --fork https://rpc.ankr.com/eth_sepolia/6d210a387ff8c4cdc9923ab3c3c66967b8da8dce449a1dc429dfa15d0ed97e68",
