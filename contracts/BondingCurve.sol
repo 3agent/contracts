@@ -24,24 +24,14 @@ contract BondingCurve is ReentrancyGuard {
 
     // ============ Constants ============
 
-    // /// @dev Initial token price in wei
-    // uint256 public constant P0 = 17000000000000; // 0.000017 ETH
+    /// @dev Initial token price in wei
+    uint256 public constant P0 = 17000000000000; // 0.000017 ETH
 
-    // /// @dev Growth ratio for the exponential curve
-    // uint256 public constant RATIO = 1000000002500000000; // ~1.0000000025
+    /// @dev Growth ratio for the exponential curve
+    uint256 public constant RATIO = 1000000002500000000; // ~1.0000000025
 
-    // /// @dev Maximum ETH that can be raised (20,000 ETH)
-    // uint256 public constant CAP = 20_000 ether;
-
-    // TODO: Dev values for Sepolia:
-    // P0 = 4.9e-9 ETH => 4.9e9 wei
-    uint256 public constant P0 = 4900000000;
-
-    // RATIO ~ 1.00000000318 => 1.00000000318 * 1e18 = 1000000003180000000
-    uint256 public constant RATIO = 1000000003180000000;
-
-    // CAP ~ 6 ETH => 6 * 1e18 = 6 ETH
-    uint256 public constant CAP = 6 ether;
+    /// @dev Maximum ETH that can be raised (15,000 ETH)
+    uint256 public constant CAP = 15_000 ether;
 
     // ============ State Variables ============
 
@@ -236,7 +226,11 @@ contract BondingCurve is ReentrancyGuard {
         uint256 geometric = FullMath.mulDiv(rPowSupply, fraction, 1e18);
         uint256 costBeforeFee = FullMath.mulDiv(P0, geometric, 1e18);
 
-        uint256 protocolFee = FullMath.mulDiv(costBeforeFee, protocolFeePercent, 1e18);
+        uint256 protocolFee = FullMath.mulDiv(
+            costBeforeFee,
+            protocolFeePercent,
+            1e18
+        );
         uint256 netCost = costBeforeFee + protocolFee;
 
         return (netCost, protocolFee);

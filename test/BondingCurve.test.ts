@@ -15,11 +15,13 @@ describe("BondingCurve", function () {
   let owner: HardhatEthersSigner;
   let user1: HardhatEthersSigner;
   let user2: HardhatEthersSigner;
+  let whale: HardhatEthersSigner;
+  let whale2: HardhatEthersSigner;
 
   const PROTOCOL_FEE_PERCENT = ethers.parseEther("0.05"); // 5%
 
   before(async function () {
-    [owner, user1, user2] = (await ethers.getSigners()) as HardhatEthersSigner[];
+    [owner, user1, user2, whale, whale2] = (await ethers.getSigners()) as HardhatEthersSigner[];
 
     initialBalance = await ethers.provider.getBalance(owner.address);
 
@@ -144,6 +146,19 @@ describe("BondingCurve", function () {
       let attempts = 0;
       const MAX_ATTEMPTS = 10;
 
+      // transfer large amount of eth to user
+      await whale.sendTransaction({
+        to: user1.address,
+        value: ethers.parseEther("9900"),
+      });
+
+      await whale2.sendTransaction({
+        to: user1.address,
+        value: ethers.parseEther("9900"),
+      });
+
+      console.log("user1 balance", await ethers.provider.getBalance(user1.address));
+
       while (!isFinalized && attempts < MAX_ATTEMPTS) {
         attempts++;
         const currentSupply = await bondingCurve.circulatingSupply();
@@ -152,6 +167,7 @@ describe("BondingCurve", function () {
           // Always try to buy 100M tokens
           const buyAmount = 100_000_000;
           const { cost, fee } = await bondingCurve.getBuyPrice(currentSupply, buyAmount);
+          console.log("cost", cost);
           const buyTx = await bondingCurve.connect(user1).buy(buyAmount, { value: cost });
           await buyTx.wait();
         } catch (error) {

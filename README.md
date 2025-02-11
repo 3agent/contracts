@@ -6,7 +6,6 @@ This repo contains the **smart contract** components for 3agent, designed to pow
 
 3agent offers a no-code solution for deploying **autonomous agents** on **Base**. Agents have their own ERC20 tokens with bonding curves for trading, and can interact on X (formerly Twitter). This repository’s smart contracts define the token (with bonding curve mechanics), the bonding curve logic itself, and a factory for deploying both.
 
-
 ## Smart Contract Summaries
 
 ### 1. CurvedToken
@@ -14,11 +13,11 @@ This repo contains the **smart contract** components for 3agent, designed to pow
 An ERC20 token implementing a bonding-curve–specific mint and burn mechanism:
 
 - **Minting/Burning**: Only allowed by the bonded contract (`BondingCurve.sol`).
-- **Events**: 
+- **Events**:
   - `Minted(address to, uint256 amount, uint256 totalSupply)`
   - `Burned(address from, uint256 amount, uint256 totalSupply)`
 - **Custom Errors**: e.g., `NotAuthorizedToMint`, `NotAuthorizedToBurn`, etc.
-- **Constructor Arguments**: 
+- **Constructor Arguments**:
   - `_bondingCurve` (the BondingCurve contract address)
   - `_name` / `_symbol` for the ERC20 token
 
@@ -31,19 +30,19 @@ Implements a **geometric (exponential) bonding curve** with Uniswap V3 integrati
   - Users can sell tokens back (burning them and refunding ETH).
 - **Finalization**:
   - On hitting the cap, automatically finalizes the curve and provides liquidity on Uniswap V3.
-- **Math**: 
+- **Math**:
   - `FullMath` for precise calculations.
   - Fixed-point exponentiation `_powFixed`.
   - Curve parameters: `P0`, `RATIO`, `CAP`.
-- **Events**: 
+- **Events**:
   - `Buy`, `Sell`, `Finalized`, etc.
 
 ### 3. ThreeAgentFactoryV1
 
 A factory contract for creating:
 
-1. **CurvedToken**  
-2. **BondingCurve**  
+1. **CurvedToken**
+2. **BondingCurve**
 
 It then wires them together so the BondingCurve can mint/burn tokens. Key points:
 
@@ -75,3 +74,15 @@ Here’s the essential Hardhat setup (`hardhat.config.ts`):
 ### Environment Variables
 
 You can configure the networks and accounts in a `.env` file (not committed). For example:
+
+```
+    // Dev values for Sepolia:
+    // /// @dev Initial token price in wei
+    // uint256 public constant P0 = 4900000000;
+
+    // /// @dev Growth ratio for the exponential curve
+    // uint256 public constant RATIO = 1000000003180000000;
+
+    // /// @dev Maximum ETH that can be raised (6 ETH)
+    // uint256 public constant CAP = 6 ether;
+```
