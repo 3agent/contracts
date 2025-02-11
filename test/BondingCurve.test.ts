@@ -157,8 +157,6 @@ describe("BondingCurve", function () {
         value: ethers.parseEther("9900"),
       });
 
-      console.log("user1 balance", await ethers.provider.getBalance(user1.address));
-
       while (!isFinalized && attempts < MAX_ATTEMPTS) {
         attempts++;
         const currentSupply = await bondingCurve.circulatingSupply();
@@ -167,7 +165,6 @@ describe("BondingCurve", function () {
           // Always try to buy 100M tokens
           const buyAmount = 100_000_000;
           const { cost, fee } = await bondingCurve.getBuyPrice(currentSupply, buyAmount);
-          console.log("cost", cost);
           const buyTx = await bondingCurve.connect(user1).buy(buyAmount, { value: cost });
           await buyTx.wait();
         } catch (error) {
