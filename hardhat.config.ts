@@ -9,9 +9,12 @@ require("dotenv").config();
 const SEPOLIA_URL = process.env.SEPOLIA_URL || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
+const BASE_URL = process.env.BASE_URL || "";
 const BASE_SEPOLIA_URL = process.env.BASE_SEPOLIA_URL || "";
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "";
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
+const DEV_PRIVATE_KEY = process.env.DEV_PRIVATE_KEY || "";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -45,18 +48,23 @@ const config: HardhatUserConfig = {
       gas: 12000000,
       blockGasLimit: 12000000,
     },
+    base: {
+      url: BASE_URL,
+      accounts: [PRIVATE_KEY],
+    },
     sepolia: {
       url: SEPOLIA_URL,
-      accounts: [PRIVATE_KEY],
+      accounts: [DEV_PRIVATE_KEY],
     },
     baseSepolia: {
       url: BASE_SEPOLIA_URL,
-      accounts: [PRIVATE_KEY],
+      accounts: [DEV_PRIVATE_KEY],
       chainId: 84532,
     },
   },
   etherscan: {
     apiKey: {
+      base: BASESCAN_API_KEY,
       sepolia: ETHERSCAN_API_KEY,
       baseSepolia: BASESCAN_API_KEY,
     },

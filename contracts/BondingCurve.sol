@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-// TODO: remove and replace with
-// import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./libraries/FullMath.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
@@ -13,11 +11,6 @@ import "./CurvedToken.sol";
 /**
  * @title BondingCurve
  * @notice An exponential (geometric) bonding curve implementation with Uniswap V3 integration
- * @dev Features:
- *      - Initial token price: 0.0000001 ETH (1e11 wei)
- *      - Growth ratio: ~1.0000000037
- *      - Hard cap: 20 ETH
- *      - Automatic Uniswap V3 liquidity provision upon finalization
  */
 contract BondingCurve is ReentrancyGuard {
     using FullMath for uint256;
@@ -25,13 +18,13 @@ contract BondingCurve is ReentrancyGuard {
     // ============ Constants ============
 
     /// @dev Initial token price in wei
-    uint256 public constant P0 = 17000000000000; // 0.000017 ETH
+    uint256 public constant P0 = 4900000000;
 
     /// @dev Growth ratio for the exponential curve
-    uint256 public constant RATIO = 1000000002500000000; // ~1.0000000025
+    uint256 public constant RATIO = 1000000003180000000;
 
-    /// @dev Maximum ETH that can be raised (15,000 ETH)
-    uint256 public constant CAP = 15_000 ether;
+    /// @dev Maximum ETH that can be raised (6 ETH)
+    uint256 public constant CAP = 6 ether;
 
     // ============ State Variables ============
 
@@ -270,9 +263,11 @@ contract BondingCurve is ReentrancyGuard {
 
         // Mint remaining tokens to reach 1B supply
         uint256 finalTotalSupply = 1_000_000_000 * (10 ** 18);
+        uint256 protocolSupply = (finalTotalSupply * protocolFeePercent) / 1e18;
         uint256 currentSupply = circulatingSupply * (10 ** token.decimals());
-        uint256 toMint = finalTotalSupply - currentSupply;
+        uint256 toMint = finalTotalSupply - protocolSupply - currentSupply;
         token.mint(address(this), toMint);
+        token.mint(protocolFeeRecipient, protocolSupply);
 
         emit PreFinalization(totalETH, token.balanceOf(address(this)));
 

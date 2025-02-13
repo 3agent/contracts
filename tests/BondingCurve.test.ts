@@ -13,6 +13,7 @@ describe("BondingCurve", function () {
   let factory: any;
   let initialBalance: any;
   let owner: HardhatEthersSigner;
+  let protocolFeeRecipient: HardhatEthersSigner;
   let user1: HardhatEthersSigner;
   let user2: HardhatEthersSigner;
   let whale: HardhatEthersSigner;
@@ -21,7 +22,7 @@ describe("BondingCurve", function () {
   const PROTOCOL_FEE_PERCENT = ethers.parseEther("0.05"); // 5%
 
   before(async function () {
-    [owner, user1, user2, whale, whale2] = (await ethers.getSigners()) as HardhatEthersSigner[];
+    [owner, user1, user2, whale, whale2, protocolFeeRecipient] = (await ethers.getSigners()) as HardhatEthersSigner[];
 
     initialBalance = await ethers.provider.getBalance(owner.address);
 
@@ -40,7 +41,7 @@ describe("BondingCurve", function () {
     await factory.initialize(
       await weth.getAddress(),
       await nonfungiblePositionManager.getAddress(),
-      owner.address,
+      protocolFeeRecipient.address,
       PROTOCOL_FEE_PERCENT
     );
 
@@ -70,7 +71,7 @@ describe("BondingCurve", function () {
       expect(await bondingCurve.token()).to.equal(await token.getAddress());
       expect(await bondingCurve.weth()).to.equal(await weth.getAddress());
       expect(await bondingCurve.nonfungiblePositionManager()).to.equal(await nonfungiblePositionManager.getAddress());
-      expect(await bondingCurve.protocolFeeRecipient()).to.equal(owner.address);
+      expect(await bondingCurve.protocolFeeRecipient()).to.equal(protocolFeeRecipient.address);
       expect(await bondingCurve.protocolFeePercent()).to.equal(PROTOCOL_FEE_PERCENT);
     });
 
@@ -202,7 +203,8 @@ describe("BondingCurve", function () {
 
   describe("Protocol Fees", function () {
     it("should collect correct protocol fees during finalization", async function () {
-      expect(await ethers.provider.getBalance(owner.address)).to.be.gt(initialBalance);
+      expect(await token.balanceOf(protocolFeeRecipient.address)).to.be.gt(0n);
+      // expect(await ethers.provider.getBalance(owner.address)).to.be.gt(initialBalance);
     });
   });
 });

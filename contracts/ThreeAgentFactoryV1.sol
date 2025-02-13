@@ -62,8 +62,7 @@ contract ThreeAgentFactoryV1 is Initializable, OwnableUpgradeable, ReentrancyGua
         address _nonfungiblePositionManagerAddress,
         address _protocolFeeRecipient,
         uint256 _protocolFeePercent
-        // TODO: turn back to external
-    ) public initializer {
+    ) external initializer {
         require(_wethAddress != address(0), "Invalid WETH address");
         require(_nonfungiblePositionManagerAddress != address(0), "Invalid position manager");
         require(_protocolFeeRecipient != address(0), "Invalid fee recipient");

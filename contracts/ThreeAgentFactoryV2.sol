@@ -3,9 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./ThreeAgentFactoryV1.sol";
 import "./BondingCurve.sol";
-// import "./BondingCurveV2.sol";
-
-// TODO: placeholder for BondingCurveV2
 
 /**
  * @title ThreeAgentFactoryV2

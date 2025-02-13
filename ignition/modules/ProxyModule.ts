@@ -6,13 +6,14 @@ const proxyModule = buildModule("ProxyModule", (m) => {
   // Deploy the Factory implementation contract
   const factory = m.contract("ThreeAgentFactoryV1");
 
-  // const wethAddress = "0x4200000000000000000000000000000000000006"; // Base WETH
-  // const nonfungiblePositionManagerAddress = "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1"; // Base Uniswap V3 NFT Position Manager
+  const wethAddress = "0x4200000000000000000000000000000000000006"; // Base WETH
+  const nonfungiblePositionManagerAddress = "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1"; // Base Uniswap V3 NFT Position Manager
 
-  const wethAddress = "0xfff9976782d46cc05630d1f6ebab18b2324d6b14"; // Sepolia WETH
-  const nonfungiblePositionManagerAddress = "0x1238536071E1c677A632429e3655c799b22cDA52"; // Sepolia Uniswap V3 NFT Position Manager
+  // SEPOLIA TESTING
+  // const wethAddress = "0xfff9976782d46cc05630d1f6ebab18b2324d6b14"; // Sepolia WETH
+  // const nonfungiblePositionManagerAddress = "0x1238536071E1c677A632429e3655c799b22cDA52"; // Sepolia Uniswap V3 NFT Position Manager
 
-  const protocolFeeRecipient = "0x4E54b5182289377058B96FD2EdFA01EaAf705Fe1";
+  const protocolFeeRecipient = "0x09cdFC0B1C22a1dFDDC9b7411EC06FfB3dC32AAC";
   const protocolFeePercent = "50000000000000000";
 
   const initializerData = m.encodeFunctionCall(factory, "initialize", [
